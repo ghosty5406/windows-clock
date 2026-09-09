@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Economiseur d'ecran Windows multi-ecrans : horloge plein ecran, verrouillage par Windows a la reprise",
   "main": "main.js",
+  "license": "MIT",
   "scripts": {
     "start": "electron . /s",
     "build": "node tools/build-scr.js",
