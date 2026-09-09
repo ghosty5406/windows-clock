@@ -14,13 +14,19 @@
   La copie dans %LOCALAPPDATA% permet de supprimer le dossier decompresse
   ensuite : le chemin enregistre ne depend plus d'ou vous avez lance ceci.
 
+  Un raccourci du menu Demarrer porte une touche de raccourci (Ctrl+Alt+V par
+  defaut) qui declenche l'economiseur immediatement, sans attendre le delai.
+
 .EXAMPLE
   .\Installer.ps1
   .\Installer.ps1 -TimeoutMinutes 10
+  .\Installer.ps1 -Hotkey 'CTRL+ALT+H'
+  .\Installer.ps1 -Hotkey ''            # pas de touche de raccourci
   .\Installer.ps1 -Uninstall
 #>
 param(
   [int]$TimeoutMinutes = 3,
+  [string]$Hotkey = 'CTRL+ALT+V',
   [switch]$Uninstall
 )
 
@@ -30,6 +36,10 @@ $appName  = 'HorlogeClaude'
 $scrName  = "$appName.scr"
 $key      = 'HKCU:\Control Panel\Desktop'
 $target   = Join-Path $env:LOCALAPPDATA $appName
+
+# Explorer n'enregistre les touches de raccourci que pour les raccourcis poses
+# sur le Bureau ou dans le menu Demarrer ; ailleurs le champ est ignore.
+$lnkPath  = Join-Path ([Environment]::GetFolderPath('Programs')) 'Horloge - veille immediate.lnk'
 
 # SystemParametersInfo applique les reglages a la session en cours ; sans lui il
 # faut se deconnecter pour que Windows les relise.
@@ -55,10 +65,73 @@ function Stop-Screensaver {
   Start-Sleep -Milliseconds 400
 }
 
+# --------------------------------------------------- declencheur au clavier ---
+
+# La touche ne lance pas le .scr elle-meme : elle demande a Windows de lancer
+# l'economiseur configure, comme il le ferait au bout du delai d'inactivite.
+# C'est ce qui donne le verrouillage — winlogon ne verrouille a la reprise que
+# s'il a lui-meme lance l'economiseur.
+$veilleSource = @'
+using System;
+using System.Runtime.InteropServices;
+
+static class Veille
+{
+    [DllImport("user32.dll", SetLastError = true)]
+    static extern bool PostMessage(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
+
+    static void Main()
+    {
+        // HWND_BROADCAST, WM_SYSCOMMAND, SC_SCREENSAVE
+        PostMessage((IntPtr)0xFFFF, 0x0112, (IntPtr)0xF140, IntPtr.Zero);
+    }
+}
+'@
+
+# Compiler evite la seconde de demarrage de PowerShell et la fenetre qui
+# clignote a chaque appui. Seul Windows PowerShell (.NET Framework) produit un
+# .exe autonome ; sous PowerShell 7 on retombe sur le script.
+function Build-Trigger {
+  $exe = Join-Path $target 'Veille.exe'
+  Remove-Item $exe -Force -ErrorAction SilentlyContinue
+  if ($PSVersionTable.PSEdition -eq 'Core') { return $null }
+  try {
+    Add-Type -TypeDefinition $veilleSource -OutputAssembly $exe -OutputType WindowsApplication
+    if (Test-Path $exe) { return $exe }
+  } catch {
+    Write-Warning "Compilation de Veille.exe impossible ($($_.Exception.Message)) ; repli sur Veille.ps1."
+  }
+  return $null
+}
+
+function Set-Hotkey([string]$combo) {
+  Remove-Item $lnkPath -Force -ErrorAction SilentlyContinue
+  if ([string]::IsNullOrWhiteSpace($combo)) { return $null }
+
+  $exe = Build-Trigger
+  $shell = New-Object -ComObject WScript.Shell
+  $lnk = $shell.CreateShortcut($lnkPath)
+  if ($exe) {
+    $lnk.TargetPath = $exe
+    $lnk.Arguments  = ''
+  } else {
+    $lnk.TargetPath = Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
+    $lnk.Arguments  = "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$(Join-Path $target 'Veille.ps1')`""
+  }
+  $lnk.WorkingDirectory = $target
+  $lnk.IconLocation     = "$(Join-Path $target $scrName),0"
+  $lnk.Description      = 'Lance l''horloge maintenant et verrouille a la reprise'
+  $lnk.WindowStyle      = 7          # reduit : rien ne clignote a l'ecran
+  $lnk.Hotkey           = $combo
+  $lnk.Save()
+  return $combo
+}
+
 # ------------------------------------------------------------ desinstallation ---
 
 if ($Uninstall) {
   Stop-Screensaver
+  Remove-Item $lnkPath -Force -ErrorAction SilentlyContinue
   Remove-ItemProperty -Path $key -Name 'SCRNSAVE.EXE' -ErrorAction SilentlyContinue
   Set-ItemProperty -Path $key -Name 'ScreenSaveActive' -Value '0'
   Apply-Spi $SPI_SETSCREENSAVEACTIVE 0 'ScreenSaveActive'
@@ -105,11 +178,18 @@ Apply-Spi $SPI_SETSCREENSAVETIMEOUT $seconds 'ScreenSaveTimeOut'
 Apply-Spi $SPI_SETSCREENSAVEACTIVE  1        'ScreenSaveActive'
 Apply-Spi $SPI_SETSCREENSAVESECURE  1        'ScreenSaverIsSecure'
 
+$combo = Set-Hotkey $Hotkey
+
 Write-Host ""
 Write-Host "Economiseur installe." -ForegroundColor Green
 Write-Host "  fichier      : $scr"
 Write-Host "  inactivite   : $TimeoutMinutes min"
 Write-Host "  verrouillage : par Windows a la reprise"
+if ($combo) {
+  Write-Host "  raccourci    : $combo (declenchement immediat)"
+} else {
+  Write-Host "  raccourci    : aucun"
+}
 Write-Host ""
 Write-Host "Vous pouvez supprimer le dossier decompresse." -ForegroundColor DarkGray
 Write-Host ""

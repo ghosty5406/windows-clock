@@ -11,6 +11,19 @@ INSTALLATION
   Au premier mouvement de souris ou frappe clavier, Windows verrouille la
   session et demande votre mot de passe.
 
+TOUCHE DE RACCOURCI
+  Ctrl+Alt+V affiche l'horloge tout de suite, sans attendre le delai.
+  Meme comportement qu'un declenchement normal : Windows verrouille a la
+  reprise. Attention, si vous revenez dans les 5 secondes qui suivent,
+  Windows ne verrouille pas (delai de grace du systeme).
+
+  Une autre touche, ou aucune :
+    powershell -ExecutionPolicy Bypass -File .\Installer.ps1 -Hotkey 'CTRL+ALT+H'
+    powershell -ExecutionPolicy Bypass -File .\Installer.ps1 -Hotkey ''
+
+  Si rien ne se passe, la combinaison est probablement deja prise par une
+  autre application : choisissez-en une autre.
+
 AUTRE DELAI
   Ouvrez PowerShell dans ce dossier et lancez :
     powershell -ExecutionPolicy Bypass -File .\Installer.ps1 -TimeoutMinutes 10
