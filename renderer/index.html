@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <title>Horloge</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="aurora" aria-hidden="true">
+    <span class="blob blob-a"></span>
+    <span class="blob blob-b"></span>
+    <span class="blob blob-c"></span>
+  </div>
+  <div class="grain" aria-hidden="true"></div>
+
+  <main class="stage" id="stage">
+    <div class="drift" id="drift">
+      <div class="time" id="time"></div>
+      <div class="minute-bar" aria-hidden="true"><i id="minuteFill"></i></div>
+      <div class="date" id="date"></div>
+    </div>
+  </main>
+
+  <footer class="hint" id="hint">Bougez la souris pour reprendre</footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

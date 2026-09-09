@@ -1,0 +1,30 @@
+Horloge - economiseur d'ecran Windows
+=====================================
+
+INSTALLATION
+  Double-cliquez sur Installer.cmd
+
+  Les fichiers sont copies dans %LOCALAPPDATA%\HorlogeClaude : vous pouvez
+  supprimer ce dossier decompresse ensuite.
+
+  L'horloge s'affiche apres 3 minutes d'inactivite, sur tous les ecrans.
+  Au premier mouvement de souris ou frappe clavier, Windows verrouille la
+  session et demande votre mot de passe.
+
+AUTRE DELAI
+  Ouvrez PowerShell dans ce dossier et lancez :
+    powershell -ExecutionPolicy Bypass -File .\Installer.ps1 -TimeoutMinutes 10
+
+DESINSTALLATION
+  Double-cliquez sur Desinstaller.cmd
+
+REGLAGES
+  Parametres Windows > Ecran de veille > bouton Parametres : ouvre le
+  fichier config.json de l'horloge (secondes, format 12h, couleur d'accent).
+
+A NOTER
+  Un double-clic sur HorlogeClaude.scr ouvre les parametres d'ecran de
+  veille de Windows, il ne lance pas l'horloge. C'est normal : c'est le
+  comportement standard de Windows pour cette extension.
+
+  Aucun droit administrateur n'est necessaire : tout est ecrit sous HKCU.

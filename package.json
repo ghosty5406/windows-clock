@@ -1,0 +1,16 @@
+{
+  "name": "windows-clock",
+  "version": "1.0.0",
+  "description": "Economiseur d'ecran Windows multi-ecrans : horloge plein ecran, verrouillage par Windows a la reprise",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron . /s",
+    "build": "node tools/build-scr.js",
+    "package": "node tools/package.js",
+    "install-scr": "node tools/build-scr.js && powershell -NoProfile -ExecutionPolicy Bypass -File dist/screensaver/Installer.ps1",
+    "preview": "electron tools/preview.js"
+  },
+  "devDependencies": {
+    "electron": "^32.0.0"
+  }
+}
